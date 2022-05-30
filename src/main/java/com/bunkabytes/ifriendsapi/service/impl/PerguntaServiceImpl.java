@@ -69,7 +69,7 @@ public class PerguntaServiceImpl implements PerguntaService {
 
 			var tagNoBanco = tagRepository.findByNome(nomeTag);
 
-			if (tagNoBanco.isPresent()) {
+			if (!tagNoBanco.isPresent()) {
 
 				tag.setNome(nomeTag);
 				var tagSalvo = tagRepository.save(tag);

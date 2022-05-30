@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.bunkabytes</groupId>
 	<artifactId>ifriends-api</artifactId>
-	<version>1.2.2-SNAPSHOT</version>
+	<version>1.2.3-SNAPSHOT</version>
 	<name>ifriends-api</name>
 	<description>API para comunidade dos estudantes do IFSP</description>
 	

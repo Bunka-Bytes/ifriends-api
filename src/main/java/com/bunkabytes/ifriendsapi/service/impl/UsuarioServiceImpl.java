@@ -82,7 +82,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 			throw new RegraNegocioException("Usuário não está logado.");
 		}
 		return usuario;
-
+ 
 	}
 
 	@Override
