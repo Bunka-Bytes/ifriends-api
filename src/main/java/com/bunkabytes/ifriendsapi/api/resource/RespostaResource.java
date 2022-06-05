@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,16 +23,18 @@ import com.bunkabytes.ifriendsapi.model.entity.CurteResp;
 import com.bunkabytes.ifriendsapi.model.entity.Pergunta;
 import com.bunkabytes.ifriendsapi.model.entity.Resposta;
 import com.bunkabytes.ifriendsapi.model.entity.Usuario;
+import com.bunkabytes.ifriendsapi.service.JwtService;
 import com.bunkabytes.ifriendsapi.service.PerguntaService;
 import com.bunkabytes.ifriendsapi.service.RespostaService;
 import com.bunkabytes.ifriendsapi.service.UsuarioService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.var;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/respostas")
+@RequestMapping("/api")
 @Slf4j
 @CrossOrigin(origins = "*")
 public class RespostaResource {
@@ -39,101 +42,120 @@ public class RespostaResource {
 	private final PerguntaService perguntaService;
 	private final UsuarioService usuarioService;
 	private final RespostaService service;
+	private final JwtService jwtService;
 
-	@GetMapping("{id}")
+	@GetMapping("/perguntas/{id}/respostas")
 	public ResponseEntity buscar(@PathVariable("id") Long idPergunta) {
 		log.info("Buscando perguntas");
 		Resposta respostas = new Resposta();
 
-		Optional<Pergunta> pergunta = perguntaService.obterPorId(idPergunta);
-		if (!pergunta.isPresent()) {
-			return ResponseEntity.badRequest().body("Não foi possivel encontrar a pergunta");
-		} else {
+		try {
+			Optional<Pergunta> pergunta = perguntaService.obterPorId(idPergunta);
 			respostas.setPergunta(pergunta.get());
+			List<Resposta> respostasEncontradas = service.buscar(respostas);
+			return ResponseEntity.ok(respostasEncontradas);
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
 		}
-
-		List<Resposta> respostasEncontradas = service.buscar(respostas);
-		return ResponseEntity.ok(respostasEncontradas);
 	}
 
-	@PostMapping
-	public ResponseEntity salvar(@RequestBody RespostaDto dto) {
+	@PostMapping("/respostas")
+	public ResponseEntity salvar(@RequestBody RespostaDto dto, @RequestHeader(value="Authorization", required = false) String authorization) {
+		
 		log.info("Salvando perguntas no banco de dados");
+		
+		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 		try {
-			Resposta entidade = converter(dto, null);
+			Resposta entidade = converter(dto);
+			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
+			entidade.setUsuario(usuario.get());
 			entidade = service.salvar(entidade);
 			return new ResponseEntity(entidade, HttpStatus.CREATED);
 		} catch (RegraNegocioException e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
 	}
+	
 
-	@PostMapping("/curtir/{idUsuario}/{idResposta}")
-	public ResponseEntity curtirResposta(@PathVariable("idResposta") Long idResposta,
-			@PathVariable("idUsuario") Long idUsuario) {
-		log.info("Mantendo curtida na resposta");
-		Optional<Usuario> usuario = usuarioService.obterPorId(idUsuario);
-		if (!usuario.isPresent()) {
-			return ResponseEntity.badRequest().body("Não foi possivel encontrar o usuário");
-		} else {
-			Optional<Resposta> resposta = service.obterPorId(idResposta);
-			if (!resposta.isPresent()) {
-				return ResponseEntity.badRequest().body("Não foi possivel encontrar a resposta");
-			} else {
-				CurteResp curteResp = new CurteResp();
-				curteResp.setUsuario(usuario.get());
-				curteResp.setResposta(resposta.get());
-				boolean curtida = service.curtir(curteResp);
-				return ResponseEntity.ok(curtida);
-			}
+	@GetMapping("/respostas/{id}")
+	public ResponseEntity exibir(@PathVariable("id") Long id) {
+		log.info("exibindo resposta");
+
+		try {
+			var resposta = service.obterPorId(id);
+			return ResponseEntity.ok(resposta);
+
+		} catch (RegraNegocioException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
 		}
 
 	}
 
-	@PutMapping("{id}")
-	public ResponseEntity atualizar(@PathVariable("id") Long id, @RequestBody RespostaDto dto) {
+	@PostMapping("/curtir/respostas/{id}")
+	public ResponseEntity curtirResposta(@PathVariable("id") Long id,
+			@RequestHeader(value="Authorization", required = false) String authorization) {
+
+		log.info("Mantendo curtida na resposta");
+
+		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
+
+		try {
+			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
+			var resposta = service.obterPorId(id);
+
+			CurteResp curteResp = new CurteResp();
+			curteResp.setUsuario(usuario.get());
+			curteResp.setResposta(resposta.get());
+			boolean curtida = service.curtir(curteResp);
+			return ResponseEntity.ok(curtida);
+
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
+
+	}
+
+	@PutMapping("/respostas/{id}")
+	public ResponseEntity atualizar(@PathVariable("id") Long id, @RequestBody RespostaDto dto,
+			@RequestHeader(value="Authorization", required = false) String authorization) {
+		
 		log.info("Atualizando resposta");
-		return service.obterPorId(id).map(entity -> {
+		
+		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
+		try {
+			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
+			Resposta resposta = converter(dto);
+			resposta.setId(id);
+			resposta.setUsuario(usuario.get());
+			service.atualizar(resposta);
+			return ResponseEntity.ok(resposta);
 
-			try {
-				Resposta resposta = converter(dto, null);
-				resposta.setId(id);
-				service.atualizar(resposta);
-				return ResponseEntity.ok(resposta);
+		} catch (RegraNegocioException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
 
-			} catch (RegraNegocioException e) {
-				return ResponseEntity.badRequest().body(e.getMessage());
-			}
-
-		}).orElseGet(() -> new ResponseEntity("Pergunta não encontrada na base de dados.", HttpStatus.BAD_REQUEST));
 	}
 
-	@DeleteMapping("{id}")
-	public ResponseEntity deletar(@PathVariable("id") Long id) {
+	@DeleteMapping("/respostas/{id}")
+	public ResponseEntity deletar(@PathVariable("id") Long id, @RequestHeader(value="Authorization", required = false) String authorization) {
+		
 		log.info("Deletando resposta do usuario");
-		return service.obterPorId(id).map(entity -> {
+		
+		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
+		try {
+			var resposta = service.obterPorId(id);
+			service.deletar(resposta.get());
+			return new ResponseEntity(HttpStatus.NO_CONTENT);
 
-			try {
-				service.deletar(entity);
-				return new ResponseEntity(HttpStatus.NO_CONTENT);
+		} catch (RegraNegocioException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
 
-			} catch (RegraNegocioException e) {
-				return ResponseEntity.badRequest().body(e.getMessage());
-			}
-
-		}).orElseGet(() -> new ResponseEntity("Pergunta não encontrada na base de dados.", HttpStatus.BAD_REQUEST));
 	}
 
-	private Resposta converter(RespostaDto dto, String authorization) {
+	private Resposta converter(RespostaDto dto) {
 		Resposta resposta = new Resposta();
-		resposta.setId(dto.getId());
 		resposta.setTexto(dto.getTexto());
-		resposta.setAceita(dto.isAceita());
-
-		Usuario usuario = usuarioService.obterPorId(dto.getUsuario())
-				.orElseThrow(() -> new RegraNegocioException("Usuário não encontrado para o Id informado."));
-
-		resposta.setUsuario(usuario);
 
 		Pergunta pergunta = perguntaService.obterPorId(dto.getPergunta())
 				.orElseThrow(() -> new RegraNegocioException("Pergunta não encontrada para o Id informado."));

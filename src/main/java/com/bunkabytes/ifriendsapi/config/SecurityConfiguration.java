@@ -63,7 +63,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/perguntas").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/perguntas/**").permitAll()
-				.antMatchers(HttpMethod.POST, "/api/usuarios/autenticar").permitAll().anyRequest().permitAll().and()
+				.antMatchers(HttpMethod.POST, "/api/usuarios/autenticar").permitAll().anyRequest().authenticated().and()
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
 				.addFilterBefore(jwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 	}

@@ -18,6 +18,6 @@ public class PerguntaDto {
 	
 	private String titulo;
 	private String texto;
-	private List<String> tag;
+	private List<String> tags;
 	private Long categoria;
 }

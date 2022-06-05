@@ -2,6 +2,7 @@ package com.bunkabytes.ifriendsapi.service.impl;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +20,8 @@ import com.bunkabytes.ifriendsapi.model.entity.Resposta;
 import com.bunkabytes.ifriendsapi.model.repository.CurteRespRepository;
 import com.bunkabytes.ifriendsapi.model.repository.RespostaRepository;
 import com.bunkabytes.ifriendsapi.service.RespostaService;
+
+import lombok.var;
 
 @Service
 public class RespostaServiceImpl implements RespostaService {
@@ -80,10 +83,6 @@ public class RespostaServiceImpl implements RespostaService {
 			throw new RegraNegocioException("Informe uma resposta válida.");
 		}
 		
-		if(resposta.getUsuario() == null|| resposta.getUsuario().getId() == null) {
-			throw new RegraNegocioException("Não está logado.");
-		}
-		
 		if(resposta.getPergunta() == null|| resposta.getPergunta().getId() == null) {
 			throw new RegraNegocioException("Pergunta não está cadastrada.");
 		}
@@ -93,7 +92,14 @@ public class RespostaServiceImpl implements RespostaService {
 	@Override
 	@Transactional
 	public Optional<Resposta> obterPorId(Long id) {
-		return repository.findById(id);
+		var resposta = repository.findById(id);
+		if (!resposta.isPresent()) {
+			throw new RegraNegocioException("Resposta não existe na base de dados");
+		}
+		List<Resposta> respostaConvertida = new ArrayList<Resposta>();
+		respostaConvertida.add(resposta.get());
+		//totalCurtidas(respostaConvertida);
+		return resposta;
 	}
 
 	@Override

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bunkabytes.ifriendsapi.api.dto.LoginDto;
 import com.bunkabytes.ifriendsapi.api.dto.TokenDto;
 import com.bunkabytes.ifriendsapi.api.dto.UsuarioDto;
 import com.bunkabytes.ifriendsapi.exception.ErroAutenticacao;
@@ -31,7 +32,7 @@ public class UsuarioResource {
 	private final JwtService jwtService;
 
 	@PostMapping("/autenticar")
-	public ResponseEntity<?> autenticar(@RequestBody UsuarioDto dto) {
+	public ResponseEntity<?> autenticar(@RequestBody LoginDto dto) {
 		log.info("Autenticando usuario");
 		try {
 			Usuario usuarioAutenticado = service.autenticar(dto.getEmail(), dto.getSenha());

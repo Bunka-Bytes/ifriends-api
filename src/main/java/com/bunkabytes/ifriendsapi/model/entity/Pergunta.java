@@ -63,7 +63,7 @@ public class Pergunta {
 	private LocalDateTime dataEmissao;
 	
 	@Transient
-	private List<String> tag;
+	private List<String> tags;
 	
 	@Transient
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)

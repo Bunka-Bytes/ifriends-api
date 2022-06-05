@@ -60,7 +60,7 @@ public class PerguntaServiceImpl implements PerguntaService {
 	@Transactional
 	public void salvarTag(Pergunta pergunta) {
 
-		List<String> tags = pergunta.getTag();
+		List<String> tags = pergunta.getTags();
 
 		for (String nomeTag : tags) {
 
@@ -199,7 +199,7 @@ public class PerguntaServiceImpl implements PerguntaService {
 				Optional<Tag> nomeTag = tagRepository.findById(tag.getTag().getId());
 				nomeTags.add(nomeTag.get().getNome());
 			}
-			pergunta.setTag(nomeTags);
+			pergunta.setTags(nomeTags);
 
 		}
 

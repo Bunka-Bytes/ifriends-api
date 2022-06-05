@@ -11,8 +11,8 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RespostaDto {
-	
-	private String texto;
-	private Long pergunta;
+public class LoginDto {
+
+	private String email;
+	private String senha;
 }

@@ -88,9 +88,9 @@ public class PerguntaResource {
 
 	}
 
-	@PostMapping("/curtir/{idPergunta}")
-	public ResponseEntity curtirPergunta(@PathVariable("idPergunta") Long idPergunta,
-			@RequestHeader("Authorization") String authorization) {
+	@PostMapping("/curtir/{id}")
+	public ResponseEntity curtirPergunta(@PathVariable("id") Long id,
+			@RequestHeader(value = "Authorization", required = false) String authorization) {
 
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 
@@ -98,7 +98,8 @@ public class PerguntaResource {
 
 		try {
 			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
-			var pergunta = service.obterPorId(idPergunta);
+			var pergunta = service.obterPorId(id);
+			
 			CurtePerg curtePerg = new CurtePerg();
 			curtePerg.setUsuario(usuario.get());
 			curtePerg.setPergunta(pergunta.get());
@@ -110,8 +111,9 @@ public class PerguntaResource {
 	}
 
 	@PostMapping
-	public ResponseEntity salvar(@RequestBody PerguntaDto dto, @RequestHeader("Authorization") String authorization) {
-
+	public ResponseEntity salvar(@RequestBody PerguntaDto dto,  @RequestHeader(value = "Authorization", required = false) String authorization) {
+		
+		
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 		log.info("Salvando pergunta na base de dados");
 		try {
@@ -127,7 +129,7 @@ public class PerguntaResource {
 
 	@PutMapping("{id}")
 	public ResponseEntity atualizar(@PathVariable("id") Long id, @RequestBody PerguntaDto dto,
-			@RequestHeader("Authorization") String authorization) {
+			@RequestHeader(value = "Authorization", required = false) String authorization) {
 
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 
@@ -149,7 +151,7 @@ public class PerguntaResource {
 	}
 
 	@DeleteMapping("{id}")
-	public ResponseEntity deletar(@PathVariable("id") Long id, @RequestHeader("Authorization") String authorization) {
+	public ResponseEntity deletar(@PathVariable("id") Long id, @RequestHeader(value = "Authorization", required = false) String authorization) {
 
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 
@@ -171,7 +173,7 @@ public class PerguntaResource {
 		Pergunta pergunta = new Pergunta();
 		pergunta.setTitulo(dto.getTitulo());
 		pergunta.setTexto(dto.getTexto());
-		pergunta.setTag(dto.getTag());
+		pergunta.setTags(dto.getTags());
 
 		Categoria categoria = categoriaService.obterCategoriaPorId(dto.getCategoria())
 				.orElseThrow(() -> new RegraNegocioException("Categoria não encontrada para o Id informado."));
