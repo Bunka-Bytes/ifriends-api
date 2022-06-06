@@ -63,18 +63,20 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/perguntas").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/perguntas/**").permitAll()
-				.antMatchers(HttpMethod.POST, "/api/usuarios/autenticar").permitAll().anyRequest().authenticated().and()
+				.antMatchers(HttpMethod.POST, "/api/usuarios/autenticar").permitAll()
+				.anyRequest().authenticated().and()
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
 				.addFilterBefore(jwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 	}
-
+ 
+	@Bean
 	public FilterRegistrationBean<CorsFilter> corsFilter() {
 
 		List<String> all = Arrays.asList("*");
-
+ 
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedMethods(all);
-		config.setAllowedOrigins(all);
+		config.setAllowedOriginPatterns(all);
 		config.setAllowedHeaders(all);
 		config.setAllowCredentials(true);
 
