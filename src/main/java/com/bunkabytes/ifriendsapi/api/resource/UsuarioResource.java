@@ -13,8 +13,6 @@ import com.bunkabytes.ifriendsapi.api.dto.TokenDto;
 import com.bunkabytes.ifriendsapi.api.dto.UsuarioDto;
 import com.bunkabytes.ifriendsapi.exception.ErroAutenticacao;
 import com.bunkabytes.ifriendsapi.exception.RegraNegocioException;
-import com.bunkabytes.ifriendsapi.model.entity.Pergunta;
-import com.bunkabytes.ifriendsapi.model.entity.Resposta;
 import com.bunkabytes.ifriendsapi.model.entity.Usuario;
 import com.bunkabytes.ifriendsapi.service.JwtService;
 import com.bunkabytes.ifriendsapi.service.UsuarioService;
@@ -37,15 +35,17 @@ public class UsuarioResource {
 		try {
 			Usuario usuarioAutenticado = service.autenticar(dto.getEmail(), dto.getSenha());
 			String token = jwtService.gerarToken(usuarioAutenticado);
-			TokenDto tokenDto = new TokenDto(usuarioAutenticado.getNome(), token);
+			TokenDto tokenDto = new TokenDto(usuarioAutenticado.getNome(), usuarioAutenticado.getImagem(), token);
 			return ResponseEntity.ok(tokenDto);
 		} catch (ErroAutenticacao e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
 	}
 
+	
 	@PostMapping
-	public ResponseEntity salvar(@RequestBody UsuarioDto dto) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public ResponseEntity<?> salvar(@RequestBody UsuarioDto dto) {
 		log.info("Salvando usuario na base de dados");
 		Usuario usuario = converter(dto);
 

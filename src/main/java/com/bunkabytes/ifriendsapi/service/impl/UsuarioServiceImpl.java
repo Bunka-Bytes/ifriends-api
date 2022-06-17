@@ -4,9 +4,6 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.domain.ExampleMatcher.StringMatcher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -63,10 +60,15 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 	@Override
 	public void validarEmail(String email) {
-		boolean existe = repository.existsByEmail(email);
-		if (existe) {
+		
+		if (!email.contains("@aluno.ifsp.edu.br")) {
+			throw new RegraNegocioException("Email não institucional.");
+		}
+
+		if (repository.existsByEmail(email)) {
 			throw new RegraNegocioException("Já existe um usuario cadastrado com este email.");
 		}
+
 	}
 
 	@Override
@@ -76,21 +78,17 @@ public class UsuarioServiceImpl implements UsuarioService {
 	}
 
 	@Override
-	public Optional<Usuario> obterPorEmail(String email) {
+	public Optional<Usuario>  obterPorEmail(String email) {
 		var usuario = repository.findByEmail(email);
 		if (!usuario.isPresent()) {
-			throw new RegraNegocioException("Usuário não está logado.");
+			throw new RegraNegocioException("Usuário não encontrado.");
 		}
 		return usuario;
  
 	}
 
 	@Override
-	public Optional<Usuario> obterPorNome(String nome) {
-		Usuario usuarioBuscado = new Usuario();
-		usuarioBuscado.setNome(nome);
-		Example example = Example.of(usuarioBuscado,
-				ExampleMatcher.matching().withIgnoreCase().withStringMatcher(StringMatcher.CONTAINING));
-		return repository.findOne(example);
+	public Long obterPorNome(String nome) {
+		return repository.findByNome(nome);
 	}
 }

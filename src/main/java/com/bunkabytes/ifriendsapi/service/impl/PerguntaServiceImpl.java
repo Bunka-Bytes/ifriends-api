@@ -1,15 +1,13 @@
 package com.bunkabytes.ifriendsapi.service.impl;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.domain.ExampleMatcher.StringMatcher;
 import org.springframework.stereotype.Service;
 
 import com.bunkabytes.ifriendsapi.exception.RegraNegocioException;
@@ -43,6 +41,13 @@ public class PerguntaServiceImpl implements PerguntaService {
 		this.tagRepository = tagRepository;
 		this.tagPergRepository = tagPergRepository;
 	}
+	
+    static class SortByDate implements Comparator<Pergunta> {
+        @Override
+        public int compare(Pergunta a, Pergunta b) {
+            return b.getDataEmissao().compareTo(a.getDataEmissao());
+        }
+    }
 
 	@Override
 	@Transactional
@@ -50,7 +55,6 @@ public class PerguntaServiceImpl implements PerguntaService {
 		validar(pergunta);
 		pergunta.setRespondida(false);
 		pergunta.setDeletado(false);
-		pergunta.setDataEmissao(LocalDateTime.now());
 		Pergunta perguntaSalva = repository.save(pergunta);
 		salvarTag(perguntaSalva);
 		return perguntaSalva;
@@ -89,23 +93,29 @@ public class PerguntaServiceImpl implements PerguntaService {
 	@Transactional
 	public Pergunta atualizar(Pergunta pergunta) {
 		Objects.requireNonNull(pergunta.getId());
-		return repository.save(pergunta);
+		validar(pergunta);
+		var perguntaAAtualizar = repository.findById(pergunta.getId());
+		perguntaAAtualizar.get().setTexto(pergunta.getTexto());
+		perguntaAAtualizar.get().setTitulo(pergunta.getTitulo());
+		return repository.save(perguntaAAtualizar.get());
 	}
 
 	@Override
 	@Transactional
 	public void deletar(Pergunta pergunta) {
 		Objects.requireNonNull(pergunta.getId());
+		//Perguntas não são deletadas na base de dados, somente marcadas com a flag.
 		pergunta.setDeletado(true);
 		repository.save(pergunta);
-	}
+	} 
 
+    
 	@Override
 	@Transactional(readOnly = true)
-	public List<Pergunta> buscar(Pergunta perguntaFiltro) {
-		Example example = Example.of(perguntaFiltro,
-				ExampleMatcher.matching().withIgnoreCase().withStringMatcher(StringMatcher.CONTAINING));
-		List<Pergunta> perguntas = repository.findAll(example);
+	public List<Pergunta> buscar(String pesquisa) {
+		if (pesquisa == null) pesquisa = "";
+		var perguntas = repository.findAllPesquisa(pesquisa);
+		Collections.sort(perguntas, new SortByDate());
 		totalCurtidas(perguntas);
 		totalResposta(perguntas);
 		populaTags(perguntas);
@@ -148,21 +158,18 @@ public class PerguntaServiceImpl implements PerguntaService {
 	@Override
 	// EM CONSTRUÇÃO
 	public Integer gravarVisualizacao(Long id) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	@Transactional
 	public boolean curtir(CurtePerg curtePerg) {
-		Example example = Example.of(curtePerg,
-				ExampleMatcher.matching().withIgnoreCase().withStringMatcher(StringMatcher.CONTAINING));
-		List<CurtePerg> curtePergEncontrados = curtePergRepository.findAll(example);
-		if (curtePergEncontrados.isEmpty()) {
+		var curtePergEncontrado = curtePergRepository.findByUsuarioAndPergunta(curtePerg.getUsuario(), curtePerg.getPergunta());
+		if (!curtePergEncontrado.isPresent()) {
 			curtePergRepository.save(curtePerg);
 			return true;
 		} else {
-			curtePergRepository.deleteById(curtePergEncontrados.get(0).getId());
+			curtePergRepository.deleteById(curtePergEncontrado.get().getId());
 			return false;
 		}
 	}
@@ -189,15 +196,16 @@ public class PerguntaServiceImpl implements PerguntaService {
 	@Override
 	@Transactional
 	public void populaTags(List<Pergunta> perguntas) {
-
+		
 		for (Pergunta pergunta : perguntas) {
-			List<TagPerg> tags = tagPergRepository.findByPergunta(pergunta);
-
-			List<String> nomeTags = new ArrayList<String>();
+			
+			var tags = tagPergRepository.findByPergunta(pergunta);
+			var nomeTags = new ArrayList<String>();
+			
 			for (TagPerg tag : tags) {
 
-				Optional<Tag> nomeTag = tagRepository.findById(tag.getTag().getId());
-				nomeTags.add(nomeTag.get().getNome());
+				var tagEncontrada = tagRepository.findById(tag.getTag().getId());
+				nomeTags.add(tagEncontrada.get().getNome());
 			}
 			pergunta.setTags(nomeTags);
 
@@ -206,8 +214,8 @@ public class PerguntaServiceImpl implements PerguntaService {
 	}
 
 	@Override
-	public void verificarUsuario(Pergunta pergunta, String usuario) {
-		if (!pergunta.getUsuario().getEmail().equals(usuario)) {
+	public void verificarUsuario(Pergunta pergunta, String usuarioEmail) {
+		if (!pergunta.getUsuario().getEmail().equals(usuarioEmail)) {
 			throw new RegraNegocioException("Pergunta não pertence ao usuário.");
 		}
 	}

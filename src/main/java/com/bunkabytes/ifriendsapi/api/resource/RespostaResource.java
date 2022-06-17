@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bunkabytes.ifriendsapi.api.dto.RespostaDto;
@@ -22,7 +21,6 @@ import com.bunkabytes.ifriendsapi.exception.RegraNegocioException;
 import com.bunkabytes.ifriendsapi.model.entity.CurteResp;
 import com.bunkabytes.ifriendsapi.model.entity.Pergunta;
 import com.bunkabytes.ifriendsapi.model.entity.Resposta;
-import com.bunkabytes.ifriendsapi.model.entity.Usuario;
 import com.bunkabytes.ifriendsapi.service.JwtService;
 import com.bunkabytes.ifriendsapi.service.PerguntaService;
 import com.bunkabytes.ifriendsapi.service.RespostaService;
@@ -39,13 +37,13 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin(origins = "*")
 public class RespostaResource {
 
+	private final RespostaService service;
 	private final PerguntaService perguntaService;
 	private final UsuarioService usuarioService;
-	private final RespostaService service;
 	private final JwtService jwtService;
 
 	@GetMapping("/perguntas/{id}/respostas")
-	public ResponseEntity buscar(@PathVariable("id") Long idPergunta) {
+	public ResponseEntity<?> buscar(@PathVariable("id") Long idPergunta) {
 		log.info("Buscando perguntas");
 		Resposta respostas = new Resposta();
 
@@ -60,25 +58,26 @@ public class RespostaResource {
 	}
 
 	@PostMapping("/respostas")
-	public ResponseEntity salvar(@RequestBody RespostaDto dto, @RequestHeader(value="Authorization", required = false) String authorization) {
-		
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public ResponseEntity salvar(@RequestBody RespostaDto dto,
+			@RequestHeader(value = "Authorization", required = false) String authorization) {
+
 		log.info("Salvando perguntas no banco de dados");
-		
+
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 		try {
-			Resposta entidade = converter(dto);
 			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
-			entidade.setUsuario(usuario.get());
-			entidade = service.salvar(entidade);
-			return new ResponseEntity(entidade, HttpStatus.CREATED);
+			var respostaASalvar = converter(dto);
+			respostaASalvar.setUsuario(usuario.get());
+			respostaASalvar = service.salvar(respostaASalvar);
+			return new ResponseEntity(respostaASalvar, HttpStatus.CREATED);
 		} catch (RegraNegocioException e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		}
 	}
-	
 
 	@GetMapping("/respostas/{id}")
-	public ResponseEntity exibir(@PathVariable("id") Long id) {
+	public ResponseEntity<?> exibir(@PathVariable("id") Long id) {
 		log.info("exibindo resposta");
 
 		try {
@@ -91,9 +90,9 @@ public class RespostaResource {
 
 	}
 
-	@PostMapping("/curtir/respostas/{id}")
-	public ResponseEntity curtirResposta(@PathVariable("id") Long id,
-			@RequestHeader(value="Authorization", required = false) String authorization) {
+	@PostMapping("/respostas/{id}/curtir")
+	public ResponseEntity<?> curtirResposta(@PathVariable("id") Long id,
+			@RequestHeader(value = "Authorization", required = false) String authorization) {
 
 		log.info("Mantendo curtida na resposta");
 
@@ -116,19 +115,19 @@ public class RespostaResource {
 	}
 
 	@PutMapping("/respostas/{id}")
-	public ResponseEntity atualizar(@PathVariable("id") Long id, @RequestBody RespostaDto dto,
-			@RequestHeader(value="Authorization", required = false) String authorization) {
-		
+	public ResponseEntity<?> atualizar(@PathVariable("id") Long id, @RequestBody RespostaDto dto,
+			@RequestHeader(value = "Authorization", required = false) String authorization) {
+
 		log.info("Atualizando resposta");
-		
+
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 		try {
-			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
-			Resposta resposta = converter(dto);
-			resposta.setId(id);
-			resposta.setUsuario(usuario.get());
-			service.atualizar(resposta);
-			return ResponseEntity.ok(resposta);
+			usuarioService.obterPorEmail(usuarioRequisicao);
+			var resposta = service.obterPorId(id);
+			service.verificarUsuario(resposta.get(), usuarioRequisicao);
+			Resposta modificacoes = converter(dto);
+			modificacoes.setId(id);
+			return ResponseEntity.ok(service.atualizar(modificacoes));
 
 		} catch (RegraNegocioException e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
@@ -137,13 +136,16 @@ public class RespostaResource {
 	}
 
 	@DeleteMapping("/respostas/{id}")
-	public ResponseEntity deletar(@PathVariable("id") Long id, @RequestHeader(value="Authorization", required = false) String authorization) {
-		
+	@SuppressWarnings("rawtypes")
+	public ResponseEntity<?> deletar(@PathVariable("id") Long id,
+			@RequestHeader(value = "Authorization", required = false) String authorization) {
+
 		log.info("Deletando resposta do usuario");
-		
+
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
 		try {
 			var resposta = service.obterPorId(id);
+			service.verificarUsuario(resposta.get(), usuarioRequisicao);
 			service.deletar(resposta.get());
 			return new ResponseEntity(HttpStatus.NO_CONTENT);
 

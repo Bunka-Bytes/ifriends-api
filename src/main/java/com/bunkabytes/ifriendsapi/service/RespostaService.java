@@ -24,4 +24,6 @@ Resposta salvar(Resposta resposta);
 	boolean curtir(CurteResp curteResp);
 	
 	void totalCurtidas(List<Resposta> respostas);
+	
+	void verificarUsuario(Resposta resposta, String usuarioEmail);
 }

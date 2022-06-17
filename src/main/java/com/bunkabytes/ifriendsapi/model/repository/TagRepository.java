@@ -8,5 +8,5 @@ import com.bunkabytes.ifriendsapi.model.entity.Tag;
 
 public interface TagRepository extends JpaRepository<Tag, Long>{
 	
-	public Optional<Tag> findByNome(String nomeTag);
+	Optional<Tag> findByNome(String nomeTag);
 }

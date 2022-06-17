@@ -13,6 +13,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -58,9 +61,15 @@ public class Pergunta {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private boolean deletado;
 	
+	@CreationTimestamp
 	@Column (name = "dt_perg")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private LocalDateTime dataEmissao;
+	
+	@UpdateTimestamp
+	@Column(name = "dt_alt_perg")
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private LocalDateTime dataAlteracao;
 	
 	@Transient
 	private List<String> tags;

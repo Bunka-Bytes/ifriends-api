@@ -1,15 +1,10 @@
 package com.bunkabytes.ifriendsapi.service.impl;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.domain.ExampleMatcher.StringMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,15 +35,17 @@ public class RespostaServiceImpl implements RespostaService {
 		validar(resposta);
 		resposta.setAceita(false);
 		resposta.setDeletado(false);
-		resposta.setDataEmissao(LocalDateTime.now());
 		return repository.save(resposta);
 	}
 
 	@Override
 	@Transactional
-	public Resposta atualizar(Resposta resposta) {
-		Objects.requireNonNull(resposta.getId());
-		return repository.save(resposta);
+	public Resposta atualizar(Resposta modificacoes) {
+		Objects.requireNonNull(modificacoes.getId());
+		var respostaAAtualizar = repository.findById(modificacoes.getId());
+		validar(respostaAAtualizar.get());
+		respostaAAtualizar.get().setTexto(modificacoes.getTexto());
+		return repository.save(respostaAAtualizar.get());
 	}
 
 	@Override
@@ -60,7 +57,7 @@ public class RespostaServiceImpl implements RespostaService {
 	}
 
 	@Override
-	@Transactional
+	@Transactional(readOnly = true)
 	public List<Resposta> buscar(Resposta respostas) {
 		Pergunta pergunta = respostas.getPergunta();
 		List<Resposta> respostasEncontradas = repository.findByPergunta(pergunta);
@@ -101,20 +98,16 @@ public class RespostaServiceImpl implements RespostaService {
 		//totalCurtidas(respostaConvertida);
 		return resposta;
 	}
-
+	
 	@Override
 	@Transactional
 	public boolean curtir(CurteResp curteResp) {
-		Example example = Example.of(curteResp, 
-				ExampleMatcher.matching()
-				.withIgnoreCase()
-				.withStringMatcher(StringMatcher.CONTAINING));
-		List<CurteResp> curteRespEncontrados = curteRespRepository.findAll(example);
-		if(curteRespEncontrados.isEmpty()) {
+		var curteRespEncontrado = curteRespRepository.findByUsuarioAndResposta(curteResp.getUsuario(), curteResp.getResposta());
+		if(!curteRespEncontrado.isPresent()) {
 			curteRespRepository.save(curteResp);
 			return true;
 		}else {
-			curteRespRepository.deleteById(curteRespEncontrados.get(0).getId());
+			curteRespRepository.deleteById(curteRespEncontrado.get().getId());
 			return false;
 		}
 	}
@@ -125,6 +118,13 @@ public class RespostaServiceImpl implements RespostaService {
 		for (Resposta resposta : respostas) {
 			Long total = curteRespRepository.countByResposta(resposta);
 			resposta.setQtdCurtida(Long.valueOf(total));
+		}
+	}
+	
+	@Override
+	public void verificarUsuario(Resposta resposta, String usuarioEmail) {
+		if (!resposta.getUsuario().getEmail().equals(usuarioEmail)) {
+			throw new RegraNegocioException("Resposta não pertence ao usuário.");
 		}
 	}
 

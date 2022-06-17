@@ -12,7 +12,6 @@ import com.bunkabytes.ifriendsapi.model.entity.Usuario;
 import com.bunkabytes.ifriendsapi.model.repository.UsuarioRepository;
 
 
-
 @Service
 public class SecurityUserDetailsService implements UserDetailsService{
 	

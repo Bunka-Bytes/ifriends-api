@@ -10,5 +10,6 @@ import lombok.Setter;
 public class TokenDto {
 	
 	private String nome;
+	private String imagem;
 	private String token;
 }

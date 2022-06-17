@@ -14,7 +14,7 @@ public interface PerguntaService {
 	
 	void deletar(Pergunta pergunta);
 	
-	List<Pergunta> buscar(Pergunta perguntaFiltro);
+	List<Pergunta> buscar(String pesquisa);
 	
 	void atualizarStatus(Pergunta pergunta, boolean respondida);
 	

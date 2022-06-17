@@ -41,40 +41,21 @@ public class PerguntaResource {
 	private final JwtService jwtService;
 
 	@GetMapping()
-	public ResponseEntity buscar(@RequestParam(value = "titulo", required = false) String titulo,
-			@RequestParam(value = "texto", required = false) String texto,
-			@RequestParam(value = "respondida", required = false) boolean respondida,
-			@RequestParam(value = "usuario", required = false) String nomeUsuario,
-			@RequestParam(value = "categoria", required = false) Long idCategoria) {
+	@SuppressWarnings("rawtypes")
+	public ResponseEntity buscar(@RequestParam(value = "pesquisa", required = false) String pesquisa) {
 		log.info("Buscando perguntas");
-		Pergunta perguntaFiltro = new Pergunta();
-		perguntaFiltro.setTitulo(titulo);
-		perguntaFiltro.setTexto(texto);
-		perguntaFiltro.setRespondida(respondida);
-
-		if (nomeUsuario != null) {
-			var usuario = usuarioService.obterPorNome(nomeUsuario);
-			if (!usuario.isPresent()) {
-				return ResponseEntity.badRequest().body("Não foi possivel encontrar o usuário");
-			} else {
-				perguntaFiltro.setUsuario(usuario.get());
-			}
-		}
-		if (idCategoria != null) {
-			var categoria = categoriaService.obterCategoriaPorId(idCategoria);
-			if (!categoria.isPresent()) {
-				return ResponseEntity.badRequest().body("Não foi possivel encontrar a categoria");
-			} else {
-				perguntaFiltro.setCategoria(categoria.get());
-			}
-		}
-
-		var perguntas = service.buscar(perguntaFiltro);
-
+		try {
+		var perguntas = service.buscar(pesquisa);
 		return ResponseEntity.ok(perguntas);
+		}
+		catch (RegraNegocioException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
+
 	}
 
 	@GetMapping("{id}")
+	@SuppressWarnings("rawtypes")
 	public ResponseEntity exibir(@PathVariable("id") Long id) {
 		log.info("exibindo pergunta");
 
@@ -88,7 +69,8 @@ public class PerguntaResource {
 
 	}
 
-	@PostMapping("/curtir/{id}")
+	@PostMapping("{id}/curtir")
+	@SuppressWarnings("rawtypes")
 	public ResponseEntity curtirPergunta(@PathVariable("id") Long id,
 			@RequestHeader(value = "Authorization", required = false) String authorization) {
 
@@ -111,6 +93,7 @@ public class PerguntaResource {
 	}
 
 	@PostMapping
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public ResponseEntity salvar(@RequestBody PerguntaDto dto,  @RequestHeader(value = "Authorization", required = false) String authorization) {
 		
 		
@@ -128,6 +111,7 @@ public class PerguntaResource {
 	}
 
 	@PutMapping("{id}")
+	@SuppressWarnings("rawtypes")
 	public ResponseEntity atualizar(@PathVariable("id") Long id, @RequestBody PerguntaDto dto,
 			@RequestHeader(value = "Authorization", required = false) String authorization) {
 
@@ -137,10 +121,9 @@ public class PerguntaResource {
 
 		try {
 			var pergunta = service.obterPorId(id);
-			var usuario = usuarioService.obterPorEmail(usuarioRequisicao);
+			usuarioService.obterPorEmail(usuarioRequisicao);
 			service.verificarUsuario(pergunta.get(), usuarioRequisicao);
 			Pergunta modificacao = converter(dto);
-			modificacao.setUsuario(usuario.get());
 			modificacao.setId(id);
 			return ResponseEntity.ok(service.atualizar(modificacao));
 
@@ -151,6 +134,7 @@ public class PerguntaResource {
 	}
 
 	@DeleteMapping("{id}")
+	@SuppressWarnings("rawtypes")
 	public ResponseEntity deletar(@PathVariable("id") Long id, @RequestHeader(value = "Authorization", required = false) String authorization) {
 
 		String usuarioRequisicao = jwtService.obterClaims(authorization).getSubject();
@@ -175,7 +159,7 @@ public class PerguntaResource {
 		pergunta.setTexto(dto.getTexto());
 		pergunta.setTags(dto.getTags());
 
-		Categoria categoria = categoriaService.obterCategoriaPorId(dto.getCategoria())
+		Categoria categoria = categoriaService.obterPorId(dto.getCategoria())
 				.orElseThrow(() -> new RegraNegocioException("Categoria não encontrada para o Id informado."));
 
 		pergunta.setCategoria(categoria);
