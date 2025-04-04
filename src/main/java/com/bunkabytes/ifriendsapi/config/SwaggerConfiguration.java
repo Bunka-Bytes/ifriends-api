@@ -35,15 +35,15 @@ public class SwaggerConfiguration implements WebMvcConfigurer{
 	private Info getInfo() {
         return new Info()
                 .title("IFriends")
-                .description("Comunidade online")
-                .version("1.1.2")
+                .description("Comunidade online do Instituto Federal de São Paulo com a missão de oferecer uma plataforma que quebre barreiras de comunicação e acolha os alunos no seu processo de exploração acadêmica.")
+                .version("3.1.7")
                 .license(getLicense());
     }
 	
 	private License getLicense() {
 		return new License()
 		        .name("Bunka Bytes")
-		        .url("https://unlicense.org/");
+		        .url("https://github.com/Bunka-Bytes");
 	 }
 	
 	private SecurityScheme createSecurityScheme() {

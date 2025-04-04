@@ -1,0 +1,585 @@
+CREATE SCHEMA producao;
+
+BEGIN;
+
+
+CREATE TABLE IF NOT EXISTS producao.categoria
+(
+    id_categoria bigserial NOT NULL,
+    nome_categoria character varying(60) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT categoria_pkey PRIMARY KEY (id_categoria)
+);
+
+CREATE TABLE IF NOT EXISTS producao.tipo_curso
+(
+    id_tipo_curso bigserial NOT NULL,
+    tipo character varying(30) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT tipo_curso_pkey PRIMARY KEY (id_tipo_curso)
+);
+
+CREATE TABLE IF NOT EXISTS producao.visualizacao
+(
+    id_visualizacao bigserial NOT NULL,
+    id_usuario bigint NOT NULL,
+	id_pergunta bigint NOT NULL,
+    CONSTRAINT visualizacao_pkey PRIMARY KEY (id_visualizacao)
+);
+
+CREATE TABLE IF NOT EXISTS producao.curte_perg
+(
+    id_usuario bigint NOT NULL,
+    id_pergunta bigint NOT NULL,
+    id_curte_perg bigserial NOT NULL,
+    CONSTRAINT curte_perg_pkey PRIMARY KEY (id_curte_perg)
+);
+
+CREATE TABLE IF NOT EXISTS producao.curte_resp
+(
+    id_usuario bigint NOT NULL,
+    id_resposta bigint NOT NULL,
+    id_curte_resp bigserial NOT NULL,
+    CONSTRAINT curte_resp_pkey PRIMARY KEY (id_curte_resp)
+);
+
+CREATE TABLE IF NOT EXISTS producao.evento
+(
+    id_evento bigserial NOT NULL,
+    nome_evento character varying(150) COLLATE pg_catalog."default" NOT NULL,
+    local_evento character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    dt_evento date NOT NULL,
+    dt_publicacao timestamp without time zone,
+    dt_alt_evento timestamp without time zone,
+    desc_evento character varying(25000) COLLATE pg_catalog."default" NOT NULL,
+    presencial boolean,
+    link_evento character varying(255) COLLATE pg_catalog."default",
+    id_usuario bigint NOT NULL,
+    id_categoria bigint NOT NULL,
+    CONSTRAINT evento_pkey PRIMARY KEY (id_evento)
+);
+
+CREATE TABLE IF NOT EXISTS producao.favorita_evento
+(
+    id_favorita_evento bigserial NOT NULL,
+    id_usuario bigint NOT NULL,
+    id_evento bigint NOT NULL,
+    CONSTRAINT favorita_evento_pkey PRIMARY KEY (id_favorita_evento)
+);
+
+CREATE TABLE IF NOT EXISTS producao.motivo_report
+(
+    id_motivo_report bigserial NOT NULL,
+    motivo character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT motivo_report_pkey PRIMARY KEY (id_motivo_report)
+);
+
+CREATE TABLE IF NOT EXISTS producao.reporta_pergunta
+(
+    id_reporta_pergunta bigserial NOT NULL,
+    id_usuario bigint NOT NULL,
+    id_pergunta bigint NOT NULL,
+    descricao character varying(500) COLLATE pg_catalog."default",
+    id_motivo_report bigint NOT NULL,
+    CONSTRAINT reporta_pergunta_pkey PRIMARY KEY (id_reporta_pergunta)
+);
+
+
+CREATE TABLE IF NOT EXISTS producao.reporta_evento
+(
+    id_reporta_evento bigserial NOT NULL,
+    id_usuario bigint NOT NULL,
+    id_evento bigint NOT NULL,
+    descricao character varying(500) COLLATE pg_catalog."default",
+    id_motivo_report bigint NOT NULL,
+    CONSTRAINT reporta_evento_pkey PRIMARY KEY (id_reporta_evento)
+);
+
+
+CREATE TABLE IF NOT EXISTS producao.reporta_resposta
+(
+    id_reporta_resposta bigserial NOT NULL,
+    id_usuario bigint NOT NULL,
+    id_resposta bigint NOT NULL,
+    descricao character varying(500) COLLATE pg_catalog."default" NOT NULL,
+    id_motivo_report bigint NOT NULL,
+    CONSTRAINT reporta_resposta_pkey PRIMARY KEY (id_reporta_resposta)
+);
+
+CREATE TABLE IF NOT EXISTS producao.pergunta
+(
+    id_pergunta bigserial NOT NULL,
+    titulo_perg character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    texto_perg character varying(25000) COLLATE pg_catalog."default" NOT NULL,
+    deletado boolean NOT NULL,
+    respondida boolean NOT NULL,
+    dt_emis_perg timestamp without time zone,
+    dt_alt_perg timestamp without time zone,
+    id_usuario bigint NOT NULL,
+    id_categoria bigint NOT NULL,
+    CONSTRAINT pergunta_pkey PRIMARY KEY (id_pergunta)
+);
+
+CREATE TABLE IF NOT EXISTS producao.recebe_titulo
+(	
+    id_recebe_titulo bigserial NOT NULL,
+    id_usuario bigint NOT NULL,
+    id_titulo bigint NOT NULL,
+    utiliza boolean,
+    CONSTRAINT recebe_titulo_pkey PRIMARY KEY (id_recebe_titulo)
+);
+
+CREATE TABLE IF NOT EXISTS producao.resposta
+(
+    id_resposta bigserial NOT NULL,
+    texto_resp character varying(2500) COLLATE pg_catalog."default",
+    deletado boolean NOT NULL,
+    aceita boolean NOT NULL,
+    dt_emis_resp timestamp without time zone,
+    dt_alt_resp timestamp without time zone,
+    id_pergunta integer NOT NULL,
+    id_usuario integer NOT NULL,
+    CONSTRAINT resposta_pkey PRIMARY KEY (id_resposta)
+);
+
+CREATE TABLE IF NOT EXISTS producao.tag
+(
+    id_tag bigserial NOT NULL,
+    nome_tag character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT tag_pkey PRIMARY KEY (id_tag)
+);
+
+CREATE TABLE IF NOT EXISTS producao.tag_evento
+(	
+    id_tag_evento bigserial NOT NULL,
+    id_tag bigint NOT NULL,
+    id_evento bigint NOT NULL,
+    CONSTRAINT tag_evento_pkey PRIMARY KEY (id_tag_evento)
+);
+
+CREATE TABLE IF NOT EXISTS producao.tag_perg
+(
+    id_tag bigint NOT NULL,
+    id_pergunta bigint NOT NULL,
+    id_tag_perg bigserial NOT NULL,
+    CONSTRAINT tag_perg_pkey PRIMARY KEY (id_tag_perg)
+);
+
+CREATE TABLE IF NOT EXISTS producao.titulo
+(
+    id_titulo bigserial NOT NULL,
+    nome_titulo character varying(60) COLLATE pg_catalog."default" NOT NULL,
+    reputacao integer NOT NULL,
+    CONSTRAINT titulo_pkey PRIMARY KEY (id_titulo)
+);
+
+CREATE TABLE IF NOT EXISTS producao.usuario
+(
+    id_usuario bigserial NOT NULL,
+    nome_usuario character varying(150) COLLATE pg_catalog."default" NOT NULL,
+    email character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    senha character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    apelido_usuario character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    bio_usuario character varying(255) COLLATE pg_catalog."default",
+    link_img_usuario character varying(255) COLLATE pg_catalog."default",
+    sigla_curso character varying(5),
+    ano smallint,
+    reputacao_total integer,
+    dt_emis_usuario timestamp without time zone,
+    dt_alt_usuario timestamp without time zone,
+    administrador boolean,
+    codigo_verificador character varying(255) COLLATE pg_catalog."default"
+    CONSTRAINT usuario_pkey PRIMARY KEY (id_usuario)
+);
+
+CREATE TABLE IF NOT EXISTS producao.curso
+(
+    sigla_curso character varying(5) NOT NULL,
+    nome_curso character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    id_tipo_curso bigserial NOT NULL
+    CONSTRAINT curso_pkey PRIMARY KEY (sigla_curso)
+);
+
+CREATE TABLE IF NOT EXISTS producao.dominio_institucional
+(
+    id_dominio_institucional bigserial NOT NULL,
+    dominio character varying(60) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT dominio_pkey PRIMARY KEY (id_dominio_institucional)
+);
+
+CREATE TABLE IF NOT EXISTS producao.imagem_pergunta
+(
+    id_imagem_pergunta bigserial NOT NULL,
+	id_pergunta bigint NOT NULL,
+	link_imagem VARCHAR ( 255 ) UNIQUE NOT NULL,
+    CONSTRAINT imagem_pergunta_pkey PRIMARY KEY (id_imagem_pergunta)
+);
+
+CREATE TABLE IF NOT EXISTS producao.imagem_resposta
+(
+    id_imagem_resposta bigserial NOT NULL,
+	id_resposta bigint NOT NULL,
+	link_imagem VARCHAR ( 255 ) UNIQUE NOT NULL,
+    CONSTRAINT imagem_resposta_pkey PRIMARY KEY (id_imagem_resposta)
+);
+
+CREATE TABLE IF NOT EXISTS producao.imagem_evento
+(
+    id_imagem_evento bigserial NOT NULL,
+	id_evento bigint NOT NULL,
+	link_imagem VARCHAR ( 255 ) UNIQUE NOT NULL,
+    CONSTRAINT imagem_evento_pkey PRIMARY KEY (id_imagem_evento)
+);
+
+CREATE TABLE IF NOT EXISTS producao.palavra_ruim
+(
+    id_palavra_ruim bigserial NOT NULL,
+    palavra character varying(60) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT palavra_ruim_pkey PRIMARY KEY (id_palavra_ruim)
+);
+
+ALTER TABLE IF EXISTS producao.curte_perg
+    ADD CONSTRAINT curte_perg_id_pergunta_fkey FOREIGN KEY (id_pergunta)
+    REFERENCES producao.pergunta (id_pergunta) MATCH SIMPLE
+	ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.curte_perg
+    ADD CONSTRAINT curte_perg_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.curte_resp
+    ADD CONSTRAINT curte_resp_id_resposta_fkey FOREIGN KEY (id_resposta)
+    REFERENCES producao.resposta (id_resposta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.curte_resp
+    ADD CONSTRAINT curte_resp_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_pergunta
+    ADD CONSTRAINT reporta_pergunta_id_pergunta_fkey FOREIGN KEY (id_pergunta)
+    REFERENCES producao.pergunta (id_pergunta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_pergunta
+    ADD CONSTRAINT reporta_pergunta_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_pergunta
+    ADD CONSTRAINT reporta_pergunta_id_motivo_report_fkey FOREIGN KEY (id_motivo_report)
+    REFERENCES producao.motivo_report (id_motivo_report) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_evento
+    ADD CONSTRAINT reporta_evento_id_evento_fkey FOREIGN KEY (id_evento)
+    REFERENCES producao.evento (id_evento) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_evento
+    ADD CONSTRAINT reporta_evento_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_evento
+    ADD CONSTRAINT reporta_evento_id_motivo_report_fkey FOREIGN KEY (id_motivo_report)
+    REFERENCES producao.motivo_report (id_motivo_report) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_resposta
+    ADD CONSTRAINT reporta_resposta_id_resposta_fkey FOREIGN KEY (id_resposta)
+    REFERENCES producao.resposta (id_resposta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_resposta
+    ADD CONSTRAINT reporta_resposta_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.reporta_resposta
+    ADD CONSTRAINT reporta_resposta_id_motivo_report_fkey FOREIGN KEY (id_motivo_report)
+    REFERENCES producao.motivo_report (id_motivo_report) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.evento
+    ADD CONSTRAINT evento_id_categoria_fkey FOREIGN KEY (id_categoria)
+    REFERENCES producao.categoria (id_categoria) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.evento
+    ADD CONSTRAINT evento_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.favorita_evento
+    ADD CONSTRAINT favorita_evento_id_evento_fkey FOREIGN KEY (id_evento)
+    REFERENCES producao.evento (id_evento) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.favorita_evento
+    ADD CONSTRAINT favorita_evento_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.pergunta
+    ADD CONSTRAINT pergunta_id_categoria_fkey FOREIGN KEY (id_categoria)
+    REFERENCES producao.categoria (id_categoria) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.usuario
+    ADD CONSTRAINT usuario_id_curso_fkey FOREIGN KEY (sigla_curso)
+    REFERENCES producao.curso (sigla_curso) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.pergunta
+    ADD CONSTRAINT pergunta_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.recebe_titulo
+    ADD CONSTRAINT recebe_titulo_id_titulo_fkey FOREIGN KEY (id_titulo)
+    REFERENCES producao.titulo (id_titulo) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.recebe_titulo
+    ADD CONSTRAINT recebe_titulo_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.resposta
+    ADD CONSTRAINT resposta_id_pergunta_fkey FOREIGN KEY (id_pergunta)
+    REFERENCES producao.pergunta (id_pergunta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.resposta
+    ADD CONSTRAINT resposta_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.curso
+    ADD CONSTRAINT curso_id_tipo_curso_fkey FOREIGN KEY (id_tipo_curso)
+    REFERENCES producao.tipo_curso (id_tipo_curso) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.tag_evento
+    ADD CONSTRAINT tag_evento_id_evento_fkey FOREIGN KEY (id_evento)
+    REFERENCES producao.evento (id_evento) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.tag_evento
+    ADD CONSTRAINT tag_evento_id_tag_fkey FOREIGN KEY (id_tag)
+    REFERENCES producao.tag (id_tag) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.tag_perg
+    ADD CONSTRAINT tag_perg_id_pergunta_fkey FOREIGN KEY (id_pergunta)
+    REFERENCES producao.pergunta (id_pergunta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+
+ALTER TABLE IF EXISTS producao.tag_perg
+    ADD CONSTRAINT tag_perg_id_tag_fkey FOREIGN KEY (id_tag)
+    REFERENCES producao.tag (id_tag) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.imagem_pergunta
+    ADD CONSTRAINT imagem_pergunta_id_pergunta_fkey FOREIGN KEY (id_pergunta)
+    REFERENCES producao.Pergunta (id_pergunta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.imagem_resposta
+    ADD CONSTRAINT imagem_resposta_id_resposta_fkey FOREIGN KEY (id_resposta)
+    REFERENCES producao.Resposta (id_resposta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.imagem_evento
+    ADD CONSTRAINT imagem_evento_id_evento_fkey FOREIGN KEY (id_evento)
+    REFERENCES producao.Evento (id_evento) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.visualizacao
+    ADD CONSTRAINT visualizacao_id_pergunta_fkey FOREIGN KEY (id_pergunta)
+    REFERENCES producao.Pergunta (id_pergunta) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+ALTER TABLE IF EXISTS producao.visualizacao
+    ADD CONSTRAINT visualizacao_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES producao.Usuario (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
+
+END;
+
+
+INSERT INTO 
+	producao.Categoria(nome_categoria)
+VALUES
+	('Ensino'),
+	('Esportes'),
+	('Estágio'),
+	('Entretenimento'),
+	('Institucional'),
+	('Outros');
+
+
+INSERT INTO 
+	producao.Curso(sigla_curso, nome_curso, id_tipo_curso)
+VALUES
+	('INFO', 'Informática', 3),
+	('MEC','Mecânica', 3),
+	('ELE', 'Eletrônica', 3),
+	('ELO', 'Eletrotécnica', 3),
+	('QUA', 'Qualidade', 3),
+ 	('TELE', 'Telecomunicações', 3),
+	('TADS', 'Tecnologia em Análise e Desenvolvimento de Sistemas', 4),
+        ('AUI', 'Automação Industrial', 4),
+	('GPI', 'Gestão da Produção Industrial', 4),
+	('GET', 'Gestão de Turismo', 4),
+	('SE', 'Sistemas Elétricos', 4),
+	('MAT', 'Matemática', 2),
+	('CBIO', 'Ciências Biológicas', 2),
+	('FIS', 'Física', 2),
+	('GEO', 'Geografia', 2),
+	('LET', 'Letras', 2),
+	('AURB', 'Arquitetura e Urbanismo', 1),
+	('ECIV', 'Engenharia Civil', 1),
+	('EPROD', 'Engenharia  de Produção', 1),
+	('ECAU', 'Engenharia  de Controle e Automação', 1),
+	('EELE', 'Engenharia  Elétrica', 1),
+	('EELO', 'Engenharia Eletrônica', 1),
+	('EMEC', 'Engenharia Mecânica', 1);
+;
+
+
+
+INSERT INTO 
+	producao.dominio_institucional(dominio) 
+VALUES 
+	('@aluno.ifsp.edu.br'), 
+	('@ifsp.edu.br');
+
+
+INSERT INTO 
+	producao.motivo_report(motivo)
+VALUES
+	('Abuso verbal'),
+	('Discurso de ódio'),
+	('Nome ofensivo ou inadequado'),
+	('Conteúdo desconexo ou inadequado'),
+	('Desinformação'),
+	('Conteúdo sexual e pornografia'),
+        ('Spam');
+
+
+INSERT INTO 
+	producao.palavra_ruim(palavra)
+VALUES
+    ('porra'),
+	('pohha'),
+	('poha'),
+	('ku'),
+	('cú'),
+	('merda'),
+	('caralho'),
+	('karalho'),
+	('caraio'),
+	('karaio'),
+	('karai'),
+	('carai'),
+        ('foder'),
+	('fuder'),
+	('foda'),
+	('fod@'),
+	('fode'),
+	('fodase'),
+	('foda-se'),
+	('fodasse'),
+	('fudido'),
+	('fodido'),
+	('fudida'),
+	('fodida'),
+	('trouxa'),
+	('viado'),
+	('viadu'),
+	('puta'),
+	('puto'),
+	('boiola'),
+	('bicha'),
+	('bixa'),
+	('babaca'),
+	('brocha'),
+	('broxa'),
+	('punheta'),
+	('buceta'),
+	('bucetuda'),
+	('piroca'),
+	('siririca'),
+	('cacete'),
+	('xota'),
+	('xoxota'),
+	('pica'),
+	('pika'),
+	('boquete'),
+	('cuzao'),
+	('cuzudo'),
+	('cuzuda'),
+	('xavasca'),
+	('xana'),
+	('brioco'),
+	('chereca'),
+	('corno'),
+	('corna'),
+	('debiloide'),
+	('mongol');
+
+
+INSERT INTO producao.tipo_curso(tipo) 
+VALUES ('BACHARELADO'),('LICENCIATURA'),('TÉCNICO'),('TECNOLÓGICO')

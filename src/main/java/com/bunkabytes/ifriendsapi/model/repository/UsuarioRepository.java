@@ -25,5 +25,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 		+ 		" nome LIKE '%:nome%' "
 		)
 	Long findByNome(@Param("nome") String nome);
+	
+	Optional<Usuario> findByCodVerificador(String codVerificador);
 
 }

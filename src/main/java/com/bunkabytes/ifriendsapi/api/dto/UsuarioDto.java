@@ -15,6 +15,8 @@ public class UsuarioDto {
 
 	private String email;
 	private String nome;
+	private String apelido;
+	private String bio;
 	private String senha;
 	private String curso;
 	private String imagem;

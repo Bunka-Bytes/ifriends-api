@@ -2,7 +2,7 @@ package com.bunkabytes.ifriendsapi.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
@@ -13,27 +13,33 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.bunkabytes.ifriendsapi.exception.RegraNegocioException;
 
 import com.bunkabytes.ifriendsapi.model.entity.CurtePerg;
+import com.bunkabytes.ifriendsapi.model.entity.ImagemPerg;
 import com.bunkabytes.ifriendsapi.model.entity.Pergunta;
 import com.bunkabytes.ifriendsapi.model.entity.Tag;
 import com.bunkabytes.ifriendsapi.model.entity.TagPerg;
 import com.bunkabytes.ifriendsapi.model.entity.Usuario;
+import com.bunkabytes.ifriendsapi.model.entity.Visualizacao;
 import com.bunkabytes.ifriendsapi.model.repository.CurtePergRepository;
+import com.bunkabytes.ifriendsapi.model.repository.ImagemPergRepository;
 import com.bunkabytes.ifriendsapi.model.repository.PerguntaRepository;
 import com.bunkabytes.ifriendsapi.model.repository.RespostaRepository;
 import com.bunkabytes.ifriendsapi.model.repository.TagPergRepository;
 import com.bunkabytes.ifriendsapi.model.repository.TagRepository;
+import com.bunkabytes.ifriendsapi.model.repository.VisualizacaoRepository;
 import com.bunkabytes.ifriendsapi.service.impl.PerguntaServiceImpl;
 
 import lombok.var;
 
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
-@Profile("testes")
+@Profile("teste1")
 public class PerguntaServiceTest {
 
 	@SpyBean
@@ -49,25 +55,37 @@ public class PerguntaServiceTest {
 	CurtePergRepository curtePergRepository;
 	@MockBean
 	RespostaRepository respostaRepository;
+	@MockBean
+	ImagemPergRepository imagemPergRepository;
+	@MockBean
+	VisualizacaoRepository visualizacaoRepository;
 
 	@Test
 	public void deveSalvarUmaPergunta() {
 		Assertions.assertDoesNotThrow(() -> {
 			// cenário
-			Pergunta perguntaASalvar = criarPergunta();
+			var perguntaASalvar = criarPergunta();
+			var imagens = new ArrayList<ImagemPerg>();
+			imagens.add(criarImagemPerg());
+			
+			var tags = new ArrayList<String>();
+			tags.add("AW2");
+			perguntaASalvar.setTags(tags);
+			
 			Mockito.doNothing().when(service).validar(perguntaASalvar);
 			Mockito.doNothing().when(service).salvarTag(perguntaASalvar);
 
-			Pergunta perguntaSalva = criarPergunta();
+			var perguntaSalva = criarPergunta();
 			perguntaSalva.setId(1l);
 			Mockito.when(repository.save(perguntaASalvar)).thenReturn(perguntaSalva);
-
+			Mockito.when(imagemPergRepository.existsByLink("IMG1")).thenReturn(false);
+			
 			// ação
-			Pergunta pergunta = service.salvar(perguntaASalvar);
+			var pergunta = service.salvar(perguntaASalvar, imagens);
 
 			// verificação
 			Assertions.assertEquals(pergunta.getId(), perguntaSalva.getId());
-			Assertions.assertEquals(pergunta.isRespondida(), false);
+			Assertions.assertEquals(pergunta.getRespondida(), null);
 		});
 	}
 
@@ -75,16 +93,20 @@ public class PerguntaServiceTest {
 	public void naoDeveSalvarUmaPerguntaQuandoHouverErroDeValidacao() {
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			// cenário
-			Pergunta perguntaASalvar = criarPergunta();
+			var imagens = new ArrayList<ImagemPerg>();
+			var perguntaASalvar = criarPergunta();
+			var tags = new ArrayList<String>();
+			tags.add("AW2");
+			perguntaASalvar.setTags(tags);
 			Mockito.doThrow(RegraNegocioException.class).when(service).validar(perguntaASalvar);
 			Mockito.doNothing().when(service).salvarTag(perguntaASalvar);
 
-			Pergunta perguntaSalva = criarPergunta();
+			var perguntaSalva = criarPergunta();
 			perguntaSalva.setId(1l);
 			Mockito.when(repository.save(perguntaASalvar)).thenReturn(perguntaSalva);
 
 			// ação
-			service.salvar(perguntaASalvar);
+			service.salvar(perguntaASalvar, imagens);
 
 			// verificação
 			Mockito.verify(repository, Mockito.never()).save(perguntaASalvar);
@@ -138,6 +160,37 @@ public class PerguntaServiceTest {
 			Mockito.verify(tagRepository).save(tag);
 			Mockito.verify(tagPergRepository).save(Mockito.any());
 		});
+	}
+	
+	@Test
+	public void deveLancarErroAoUltarapassarLimiteDeTags() {
+		
+		// cenário
+		var listaTag = new ArrayList<String>();
+		listaTag.add("1");
+		listaTag.add("2");
+		listaTag.add("3");
+		listaTag.add("4");
+		listaTag.add("5");
+		listaTag.add("6");
+		listaTag.add("7");
+		listaTag.add("8");
+		listaTag.add("9");
+		listaTag.add("10");
+		listaTag.add("11");
+
+		var pergunta = criarPergunta();
+		pergunta.setTags(listaTag);
+
+		// ação
+		Assertions.assertThrows(RegraNegocioException.class, () -> {
+			service.salvarTag(pergunta);
+		});
+
+		// verificação
+		Mockito.verify(tagRepository, Mockito.never()).save(Mockito.any());
+		Mockito.verify(tagPergRepository, Mockito.never()).save(Mockito.any());
+		
 	}
 
 	@Test
@@ -213,56 +266,116 @@ public class PerguntaServiceTest {
 		Assertions.assertNotEquals(pergunta.isDeletado(), true);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void deveFiltrarPergunta() {
 
 		// cenário
-		Pergunta pergunta = criarPergunta();
+		var pergunta = criarPergunta();
 		pergunta.setId(1l);
-
+		var listaTag = new ArrayList<String>();
+		listaTag.add("AW2");
+		pergunta.setTags(listaTag);
+		
+		var pergunta2 = criarPergunta();
+		pergunta2.setId(2l);
+		pergunta2.setQtdResposta(1l);
+		
+		var pergunta3 = criarPergunta();
+		pergunta.setId(3l);
+		var listaTag2 = new ArrayList<String>();
+		listaTag2.add("LP3");
+		pergunta.setTags(listaTag);
+		
 		var lista = new ArrayList<Pergunta>();
 		lista.add(pergunta);
+		lista.add(pergunta2);
+		lista.add(pergunta3);
 
-		String pesquisa = "pesquisa";
-		Mockito.when(repository.findAllPesquisa(Mockito.anyString())).thenReturn(lista);
+		Mockito.when(repository.findAll(Mockito.any(Example.class), Mockito.any(Sort.class))).thenReturn(lista);
 
 		Mockito.doNothing().when(service).totalCurtidas(lista);
 		Mockito.doNothing().when(service).totalResposta(lista);
+		Mockito.doNothing().when(service).totalVisualizacao(lista);
 		Mockito.doNothing().when(service).populaTags(lista);
 
 		// ação
-		List<Pergunta> resultado = service.buscar(pesquisa);
+		var resultado = service.buscar(pergunta, true, "AW2", "titulo", true);
 
 		// verificação
 		Assertions.assertFalse(resultado.isEmpty());
+		Assertions.assertTrue(resultado.size() == 1);
 		Assertions.assertTrue(resultado.contains(pergunta));
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Test
+	public void deveFiltrarPerguntaPadrao() {
+
+		// cenário
+		var pergunta = criarPergunta();
+		pergunta.setId(1l);
+		var listaTag = new ArrayList<String>();
+		listaTag.add("AW2");
+		pergunta.setTags(listaTag);
+		
+		var lista = new ArrayList<Pergunta>();
+		lista.add(pergunta);
+
+		Mockito.when(repository.findAll(Mockito.any(Example.class), Mockito.any(Sort.class))).thenReturn(lista);
+
+		Mockito.doNothing().when(service).totalCurtidas(lista);
+		Mockito.doNothing().when(service).totalResposta(lista);
+		Mockito.doNothing().when(service).totalVisualizacao(lista);
+		Mockito.doNothing().when(service).populaTags(lista);
+
+		// ação
+		var resultado = service.buscar(pergunta, null, "AW2", null, false);
+
+		// verificação
+		Assertions.assertFalse(resultado.isEmpty());
 	}
 
 	@Test
-	public void deveAtualizarStatusPergunta() {
+	public void deveFecharPergunta() {
 
 		// cenário
-		Pergunta pergunta = criarPergunta();
+		var pergunta = criarPergunta();
 		pergunta.setId(1l);
 		pergunta.setRespondida(false);
-
-		boolean respondida = true;
-		Mockito.doReturn(pergunta).when(service).atualizar(pergunta);
+		
+		Mockito.when(repository.save(pergunta)).thenReturn(null);
 
 		// ação
-		service.atualizarStatus(pergunta, respondida);
+		var msg = service.atualizarStatus(pergunta);
 
 		// verificação
-		Assertions.assertEquals(pergunta.isRespondida(), respondida);
-		Mockito.verify(service).atualizar(pergunta);
+		Assertions.assertEquals(msg, "Pergunta aberta com sucesso!");
+	}
+	
+	@Test
+	public void naoDeveFecharPergunta() {
+
+		// cenário
+		var pergunta = criarPergunta();
+		pergunta.setId(1l);
+		pergunta.setRespondida(true);
+		
+		Mockito.when(repository.save(pergunta)).thenReturn(null);
+
+		// ação
+		var msg = service.atualizarStatus(pergunta);
+
+		// verificação
+		Assertions.assertEquals(msg, "Pergunta fechada com sucesso!");
 	}
 
 	@Test
 	public void deveObterPerguntaPorId() {
 
 		// cenário
-		Long id = 1l;
-		Pergunta pergunta = criarPergunta();
+		var id = 1l;
+		var pergunta = criarPergunta();
 		pergunta.setId(1l);
 
 		var lista = new ArrayList<Pergunta>();
@@ -270,6 +383,7 @@ public class PerguntaServiceTest {
 		Mockito.when(repository.findById(1l)).thenReturn(Optional.of(pergunta));
 
 		Mockito.doNothing().when(service).totalCurtidas(lista);
+		Mockito.doNothing().when(service).totalVisualizacao(lista);
 		Mockito.doNothing().when(service).totalResposta(lista);
 		Mockito.doNothing().when(service).populaTags(lista);
 
@@ -285,14 +399,12 @@ public class PerguntaServiceTest {
 
 		// cenário
 		Long id = 1l;
-		Pergunta pergunta = criarPergunta();
-		pergunta.setId(1l);
-
 		var lista = new ArrayList<Pergunta>();
 
-		Mockito.when(repository.findById(1l)).thenReturn(Optional.empty());
+		Mockito.when(repository.findById(id)).thenReturn(Optional.empty());
 
 		Mockito.doNothing().when(service).totalCurtidas(lista);
+		Mockito.doNothing().when(service).totalVisualizacao(lista);
 		Mockito.doNothing().when(service).totalResposta(lista);
 		Mockito.doNothing().when(service).populaTags(lista);
 
@@ -304,12 +416,12 @@ public class PerguntaServiceTest {
 	public void devePreencherAsTagsDasPerguntas() {
 		Assertions.assertDoesNotThrow(() -> {
 			// cenário
-			Pergunta pergunta = criarPergunta();
+			var pergunta = criarPergunta();
 			pergunta.setId(1l);
 			var listaPergunta = new ArrayList<Pergunta>();
 			listaPergunta.add(pergunta);
 
-			TagPerg tagPerg = criarTagPerg();
+			var tagPerg = criarTagPerg();
 			tagPerg.setPergunta(pergunta);
 			var tags = new ArrayList<TagPerg>();
 			tags.add(tagPerg);
@@ -333,7 +445,7 @@ public class PerguntaServiceTest {
 	public void devePreencherTotalDeCurtidas() {
 		Assertions.assertDoesNotThrow(() -> {
 			// cenário
-			Long total = 1l;
+			var total = 1l;
 			var pergunta = criarPergunta();
 			pergunta.setId(1l);
 
@@ -355,8 +467,8 @@ public class PerguntaServiceTest {
 	public void devePreencherTotalDeRespostas() {
 		Assertions.assertDoesNotThrow(() -> {
 			// cenário
-			Long total = 1l;
-			Pergunta pergunta = criarPergunta();
+			var total = 1l;
+			var pergunta = criarPergunta();
 			pergunta.setId(1l);
 
 			var listaPergunta = new ArrayList<Pergunta>();
@@ -374,10 +486,10 @@ public class PerguntaServiceTest {
 	}
 
 	@Test
-	public void deveLancarTrataCorretamenteAoValidarPergunta() {
+	public void deveTratarCorretamenteAoValidarPergunta() {
 
 		// cenário
-		Pergunta pergunta = new Pergunta();
+		var pergunta = new Pergunta();
 
 		// ação e verificação
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
@@ -385,24 +497,35 @@ public class PerguntaServiceTest {
 		});
 
 		pergunta.setTexto("");
-
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(pergunta);
 		});
-
-		pergunta.setTexto("texto");
-
+		
+	    char[] texto = new char[1001];
+	    Arrays.fill(texto, 'a');
+		pergunta.setTexto(new String(texto));
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(pergunta);
 		});
 
 		pergunta.setTitulo("");
-
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(pergunta);
 		});
-		pergunta.setTitulo("Titulo");
-
+		
+	    char[] titulo = new char[51];
+	    Arrays.fill(titulo, 'a');
+		pergunta.setTitulo(new String(titulo));
+		Assertions.assertThrows(RegraNegocioException.class, () -> {
+			service.validar(pergunta);
+		});
+		
+		pergunta.setTexto("TEXTO");
+		Assertions.assertThrows(RegraNegocioException.class, () -> {
+			service.validar(pergunta);
+		});
+		
+		pergunta.setTitulo("TITULO");
 		Assertions.assertDoesNotThrow(() -> {
 			service.validar(pergunta);
 		});
@@ -445,6 +568,42 @@ public class PerguntaServiceTest {
 		});
 
 	}
+	
+	@Test
+	public void deveSomarVisualizacao() {
+		Assertions.assertDoesNotThrow(() -> {
+			// cenário
+			var visualizacao = criarVisualizacaoPerg();
+			visualizacao.setId(1l);
+			Mockito.when(visualizacaoRepository.findByUsuarioAndPergunta(Mockito.any(Usuario.class),
+					Mockito.any(Pergunta.class))).thenReturn(Optional.empty());
+
+			// ação e verificação
+			boolean resultado = service.somarVisualizacao(visualizacao);
+
+			Mockito.verify(visualizacaoRepository).save(Mockito.any(Visualizacao.class));
+			Assertions.assertEquals(resultado, true);
+		});
+
+	}
+	
+	@Test
+	public void naoDeveFazerNadaAoSomarVisualizacaoQueJaFoiVista() {
+		Assertions.assertDoesNotThrow(() -> {
+			// cenário
+			var visualizacao = criarVisualizacaoPerg();
+			visualizacao.setId(1l);
+			Mockito.when(visualizacaoRepository.findByUsuarioAndPergunta(Mockito.any(Usuario.class),
+					Mockito.any(Pergunta.class))).thenReturn(Optional.of(visualizacao));
+
+			// ação e verificação
+			boolean resultado = service.somarVisualizacao(visualizacao);
+
+			Mockito.verify(visualizacaoRepository, Mockito.never()).save(Mockito.any(Visualizacao.class));
+			Assertions.assertEquals(resultado, false);
+		});
+
+	}
 
 	@Test
 	public void deveRetonarErroCasoPerguntaNaoPertenceAoUsuario() {
@@ -453,11 +612,14 @@ public class PerguntaServiceTest {
 		var pergunta = criarPergunta();
 		pergunta.setId(1l);
 		pergunta.getUsuario().setEmail("erro@gmail.com");
-		var usuarioEmail = "teste@gmail.com";
+
+		var usuario = UsuarioServiceTest.criarUsuario();
+		usuario.setId(1l);
+		usuario.setEmail("teste@gmail.com");
 
 		// ação e verificação
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
-			service.verificarUsuario(pergunta, usuarioEmail);
+			service.verificarUsuario(pergunta, usuario);
 		});
 
 	}
@@ -469,34 +631,37 @@ public class PerguntaServiceTest {
 		var pergunta = criarPergunta();
 		pergunta.setId(1l);
 		pergunta.getUsuario().setEmail("teste@gmail.com");
-		var usuarioEmail = "teste@gmail.com";
+
+		var usuario = UsuarioServiceTest.criarUsuario();
+		usuario.setId(1l);
+		usuario.setEmail("teste@gmail.com");
 
 		// ação e verificação
 		Assertions.assertDoesNotThrow(() -> {
-			service.verificarUsuario(pergunta, usuarioEmail);
+			service.verificarUsuario(pergunta, usuario);
 		});
 
 	}
-
+	
 	@Test
-	public void deveGravarVisualizacoesDaPergunta() {
-
-		// cenário
-		var id = 1l;
-
-		// ação
-		var result = service.gravarVisualizacao(id);
-
-		// verificação
-		Assertions.assertEquals(result, null);
-
+	public void deveObterPerguntasPorUsuario() {
+		//cenário
+		var perguntas = new ArrayList<Pergunta>();
+		perguntas.add(criarPergunta());
+		
+		var usuario = UsuarioServiceTest.criarUsuario();
+		Mockito.when(repository.findByUsuario(usuario)).thenReturn(perguntas);
+		
+		//ação
+		service.obterPorUsuario(usuario);
+		
 	}
 
 	public static Pergunta criarPergunta() {
 
 		return Pergunta.builder().titulo("testes no Java").texto("Como realizar testes no JUnit 5")
 				.dataEmissao(LocalDateTime.now()).deletado(false).usuario(UsuarioServiceTest.criarUsuario())
-				.categoria(CategoriaServiceTest.criarCategoria()).tags(new ArrayList<String>()).build();
+				.categoria(CategoriaServiceTest.criarCategoria()).tags(new ArrayList<String>()).qtdResposta(0l).build();
 	}
 
 	public static TagPerg criarTagPerg() {
@@ -514,9 +679,19 @@ public class PerguntaServiceTest {
 		usuario.setId(1l);
 		return CurtePerg.builder().pergunta(pergunta).usuario(usuario).build();
 	}
+	
+	public static ImagemPerg criarImagemPerg() {
+		var pergunta = criarPergunta();
+		pergunta.setId(1l);
+		return ImagemPerg.builder().id(1l).pergunta(pergunta).link("IMG1").build();
+	}
 
 	public static Tag criarTag() {
 		return Tag.builder().nome("AW2").build();
 	}
+	
+	 public static Visualizacao criarVisualizacaoPerg(){
+		 return Visualizacao.builder().usuario(UsuarioServiceTest.criarUsuario()).pergunta(criarPergunta()).build();
+	 }
 
 }

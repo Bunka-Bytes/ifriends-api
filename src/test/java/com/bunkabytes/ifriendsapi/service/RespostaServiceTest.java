@@ -2,7 +2,7 @@ package com.bunkabytes.ifriendsapi.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
@@ -19,10 +19,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.bunkabytes.ifriendsapi.exception.RegraNegocioException;
 
 import com.bunkabytes.ifriendsapi.model.entity.CurteResp;
+import com.bunkabytes.ifriendsapi.model.entity.ImagemResp;
 import com.bunkabytes.ifriendsapi.model.entity.Pergunta;
 import com.bunkabytes.ifriendsapi.model.entity.Resposta;
 import com.bunkabytes.ifriendsapi.model.entity.Usuario;
 import com.bunkabytes.ifriendsapi.model.repository.CurteRespRepository;
+import com.bunkabytes.ifriendsapi.model.repository.ImagemRespRepository;
 import com.bunkabytes.ifriendsapi.model.repository.RespostaRepository;
 
 import com.bunkabytes.ifriendsapi.service.impl.RespostaServiceImpl;
@@ -31,7 +33,7 @@ import lombok.var;
 
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
-@Profile("testes")
+@Profile("teste1")
 public class RespostaServiceTest {
 
 	@SpyBean
@@ -41,24 +43,29 @@ public class RespostaServiceTest {
 	RespostaRepository repository;
 	@MockBean
 	CurteRespRepository curteRespRepository;
-
+	@MockBean
+	ImagemRespRepository imagemRespRepository;
+	
 	@Test
 	public void deveSalvarUmaResposta() {
 		Assertions.assertDoesNotThrow(() -> {
 			// cenário
-			Resposta respostaASalva = criarResposta();
+			var imagens = new ArrayList<ImagemResp>();
+			var link = "IMG1";
+			imagens.add(criarImagemResp());
+			var respostaASalva = criarResposta();
 			Mockito.doNothing().when(service).validar(respostaASalva);
-
-			Resposta respostaSalva = criarResposta();
+			var respostaSalva = criarResposta();
 			respostaSalva.setId(1l);
 			Mockito.when(repository.save(respostaASalva)).thenReturn(respostaSalva);
+			Mockito.when(imagemRespRepository.existsByLink(link)).thenReturn(false);
 
 			// ação
-			Resposta resposta = service.salvar(respostaASalva);
+			var resposta = service.salvar(respostaASalva, imagens);
 
 			// verificação
 			Assertions.assertEquals(resposta.getId(), respostaSalva.getId());
-			Assertions.assertEquals(resposta.isAceita(), false);
+			Assertions.assertEquals(resposta.getAceita(), false);
 
 		});
 	}
@@ -67,15 +74,16 @@ public class RespostaServiceTest {
 	public void naoDeveSalvarUmaRespostaQuandoHouverErroDeValidacao() {
 
 		// cenário
-		Resposta respostaASalva = criarResposta();
+		var imagens = new ArrayList<ImagemResp>();
+		var respostaASalva = criarResposta();
 		Mockito.doThrow(RegraNegocioException.class).when(service).validar(respostaASalva);
 
-		Resposta respostaSalva = criarResposta();
+		var respostaSalva = criarResposta();
 		respostaSalva.setId(1l);
 		Mockito.when(repository.save(respostaASalva)).thenReturn(respostaSalva);
 
 		// ação
-		Assertions.assertThrows(RegraNegocioException.class, () -> service.salvar(respostaASalva));
+		Assertions.assertThrows(RegraNegocioException.class, () -> service.salvar(respostaASalva, imagens));
 
 		// verificação
 		Mockito.verify(repository, Mockito.never()).save(respostaASalva);
@@ -220,24 +228,30 @@ public class RespostaServiceTest {
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(resposta);
 		});
+		
 		resposta.setTexto("");
-
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(resposta);
 		});
-		resposta.setTexto("texto");
-
+		
+	    char[] texto = new char[1001];
+	    Arrays.fill(texto, 'a');
+		resposta.setTexto(new String(texto));
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(resposta);
 		});
+		
 		resposta.setPergunta(PerguntaServiceTest.criarPergunta());
-
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
 			service.validar(resposta);
 		});
+		
 		resposta.getPergunta().setId(1l);
-		;
-
+		Assertions.assertThrows(RegraNegocioException.class, () -> {
+			service.validar(resposta);
+		});
+		
+		resposta.setTexto("TEXTO");
 		Assertions.assertDoesNotThrow(() -> {
 			service.validar(resposta);
 		});
@@ -309,11 +323,13 @@ public class RespostaServiceTest {
 		var resposta = criarResposta();
 		resposta.setId(1l);
 		resposta.getUsuario().setEmail("teste@gmail.com");
-		var usuarioEmail = "teste@gmail.com";
-
+		
+		var usuario = UsuarioServiceTest.criarUsuario();
+		usuario.setId(1l);
+		usuario.setEmail("teste@gmail.com");
 		// ação e verificação
 		Assertions.assertDoesNotThrow(() -> {
-			service.verificarUsuario(resposta, usuarioEmail);
+			service.verificarUsuario(resposta, usuario);
 		});
 
 	}
@@ -325,13 +341,30 @@ public class RespostaServiceTest {
 		var resposta = criarResposta();
 		resposta.setId(1l);
 		resposta.getUsuario().setEmail("erro@gmail.com");
-		var usuarioEmail = "teste@gmail.com";
 
+		var usuario = UsuarioServiceTest.criarUsuario();
+		usuario.setId(1l);
+		usuario.setEmail("teste@gmail.com");
+		
 		// ação e verificação
 		Assertions.assertThrows(RegraNegocioException.class, () -> {
-			service.verificarUsuario(resposta, usuarioEmail);
+			service.verificarUsuario(resposta, usuario);
 		});
 
+	}
+	
+	@Test
+	public void deveObterRespostaPorUsuario() {
+		//cenário
+		var respostas = new ArrayList<Resposta>();
+		respostas.add(criarResposta());
+		
+		var usuario = UsuarioServiceTest.criarUsuario();
+		Mockito.when(repository.findByUsuario(usuario)).thenReturn(respostas);
+		
+		//ação
+		service.obterPorUsuario(usuario);
+		
 	}
 
 	public static Resposta criarResposta() {
@@ -345,6 +378,13 @@ public class RespostaServiceTest {
 		var usuario = UsuarioServiceTest.criarUsuario();
 		usuario.setId(1l);
 		return CurteResp.builder().resposta(resposta).usuario(usuario).build();
+	}
+	
+	public static ImagemResp criarImagemResp() {
+		var resposta = criarResposta();
+		resposta.setId(1l);
+		return ImagemResp.builder().id(1l).resposta(resposta).link("IMG1").build();
+		
 	}
 
 }

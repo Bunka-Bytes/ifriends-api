@@ -10,6 +10,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,6 +35,7 @@ public class TagPerg {
 	private Tag tag;
 	
 	@ManyToOne
+	@JsonIgnore
 	@JoinColumn(name = "id_pergunta")
 	private Pergunta pergunta;
 }

@@ -3,6 +3,7 @@ package com.bunkabytes.ifriendsapi.model.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,6 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -29,7 +31,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Pergunta {
+public class Pergunta{
 	
 	@Id
 	@Column(name = "id_pergunta")
@@ -51,18 +53,21 @@ public class Pergunta {
 	private String texto;
 	
 	@Column(name = "respondida")
-	private boolean respondida;
+	private Boolean respondida;
 	
-	@Column(name = "visualizacao")
+	@Transient
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private Integer visualizacao;
+	
+	@OneToMany(targetEntity = ImagemPerg.class, cascade = CascadeType.ALL, mappedBy = "pergunta")
+	private List<ImagemPerg> imagens;
 	
 	@Column(name = "deletado")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private boolean deletado;
 	
 	@CreationTimestamp
-	@Column (name = "dt_perg")
+	@Column (name = "dt_emis_perg")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private LocalDateTime dataEmissao;
 	

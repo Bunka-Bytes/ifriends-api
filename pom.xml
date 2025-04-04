@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.bunkabytes</groupId>
 	<artifactId>ifriends-api</artifactId>
-	<version>1.3.1-SNAPSHOT</version>
+	<version>3.1.7-SNAPSHOT</version>
 	<name>ifriends-api</name>
 	<description>API para comunidade dos estudantes do IFSP</description>
 	
@@ -20,7 +20,7 @@
 	
 	<dependencies>
 	
-	<dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>

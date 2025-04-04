@@ -1,5 +1,6 @@
 package com.bunkabytes.ifriendsapi.model.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,6 @@ public interface CurteRespRepository extends JpaRepository<CurteResp, Long>{
 		+ 		" AND cr.resposta = :resposta"
 		)
 	Optional<CurteResp> findByUsuarioAndResposta(@Param("usuario") Usuario usuario, @Param("resposta") Resposta resposta);
+	
+	List<CurteResp> findByUsuario(Usuario usuario);
 }

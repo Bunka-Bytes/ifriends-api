@@ -17,17 +17,17 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.bunkabytes.ifriendsapi.exception.RegraNegocioException;
 import com.bunkabytes.ifriendsapi.model.entity.Categoria;
 import com.bunkabytes.ifriendsapi.model.repository.CategoriaRepository;
-import com.bunkabytes.ifriendsapi.service.impl.CategoriaServiceImpl;
+import com.bunkabytes.ifriendsapi.service.impl.RecursosServiceImpl;
 
 import lombok.var;
 
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
-@Profile("testes")
+@Profile("teste1")
 public class CategoriaServiceTest {
 
 	@SpyBean
-	CategoriaServiceImpl service;
+	RecursosServiceImpl service;
 	@MockBean
 	CategoriaRepository repository;
 

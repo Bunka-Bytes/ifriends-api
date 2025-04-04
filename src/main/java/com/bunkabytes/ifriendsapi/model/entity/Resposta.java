@@ -2,7 +2,9 @@ package com.bunkabytes.ifriendsapi.model.entity;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,6 +12,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -43,17 +46,20 @@ public class Resposta {
 	@JoinColumn(name = "id_pergunta")
 	private Pergunta pergunta;
 	  
-	@Column(name = "texto_resp")
+	@Column(name = "texto_resp", length=25000, nullable=false)
 	private String texto;
 
 	@Column(name = "aceita")
-	private boolean aceita;
+	private Boolean aceita;
+	
+	@OneToMany(targetEntity = ImagemResp.class, cascade = CascadeType.ALL, mappedBy = "resposta")
+	private List<ImagemResp> imagens;
 	
 	@Column(name = "deletado")
 	private boolean deletado;
 	
 	@CreationTimestamp
-	@Column (name = "dt_resp")
+	@Column (name = "dt_emis_resp")
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private LocalDateTime dataEmissao;
 	

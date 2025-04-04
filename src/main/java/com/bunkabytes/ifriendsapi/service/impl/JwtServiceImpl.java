@@ -36,11 +36,12 @@ public class JwtServiceImpl implements JwtService {
 						.setSubject(usuario.getEmail())
 						.claim("idUsuario", usuario.getId())
 						.claim("nome", usuario.getNome())
+						.claim("codigoVerificador", usuario.getCodVerificador())
 						.signWith(SignatureAlgorithm.HS512, chaveAssinatura)
 						.compact();
 		return token;
 	}
-
+	
 	@Override
 	public Claims obterClaims(String authorization) throws ExpiredJwtException {
 		String token = authorization;
